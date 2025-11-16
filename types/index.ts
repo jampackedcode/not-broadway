@@ -23,6 +23,7 @@ export interface Show {
   id: string;
   title: string;
   theaterId: string;
+  theaterName?: string; // Denormalized for easier human readability
   description: string;
   startDate: string; // ISO date string
   endDate: string; // ISO date string

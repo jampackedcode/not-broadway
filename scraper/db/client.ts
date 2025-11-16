@@ -1,4 +1,7 @@
+import Database from 'better-sqlite3';
 import { getInitializationSQL } from './schema';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Database Client Interface
@@ -40,47 +43,81 @@ export interface DatabaseClient {
 }
 
 /**
- * Placeholder implementation - will be replaced with actual SQLite client
+ * SQLite implementation using better-sqlite3
  */
 export class SQLiteClient implements DatabaseClient {
   private dbPath: string;
+  private db: Database.Database | null = null;
 
   constructor(dbPath: string = './data/scraper.db') {
     this.dbPath = dbPath;
-    // TODO: Initialize better-sqlite3 connection
+
+    // Ensure the data directory exists
+    const dir = path.dirname(dbPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Initialize better-sqlite3 connection
+    this.db = new Database(dbPath, { verbose: undefined });
+    this.db.pragma('journal_mode = WAL');
   }
 
   initialize(): void {
+    if (!this.db) {
+      throw new Error('Database not initialized');
+    }
+
     const sql = getInitializationSQL();
     sql.forEach((statement) => {
-      // TODO: Execute each statement
-      console.log('Would execute:', statement.substring(0, 50) + '...');
+      this.db!.exec(statement);
     });
   }
 
   query<T = any>(sql: string, params?: any[]): T[] {
-    // TODO: Implement
-    throw new Error('Not implemented');
+    if (!this.db) {
+      throw new Error('Database not initialized');
+    }
+
+    const stmt = this.db.prepare(sql);
+    return (params ? stmt.all(params) : stmt.all()) as T[];
   }
 
   get<T = any>(sql: string, params?: any[]): T | undefined {
-    // TODO: Implement
-    throw new Error('Not implemented');
+    if (!this.db) {
+      throw new Error('Database not initialized');
+    }
+
+    const stmt = this.db.prepare(sql);
+    return (params ? stmt.get(params) : stmt.get()) as T | undefined;
   }
 
   run(sql: string, params?: any[]): { changes: number; lastInsertRowid: number } {
-    // TODO: Implement
-    throw new Error('Not implemented');
+    if (!this.db) {
+      throw new Error('Database not initialized');
+    }
+
+    const stmt = this.db.prepare(sql);
+    const info = params ? stmt.run(params) : stmt.run();
+    return {
+      changes: info.changes,
+      lastInsertRowid: Number(info.lastInsertRowid)
+    };
   }
 
   transaction<T>(fn: () => T): T {
-    // TODO: Implement
-    throw new Error('Not implemented');
+    if (!this.db) {
+      throw new Error('Database not initialized');
+    }
+
+    return this.db.transaction(fn)();
   }
 
   close(): void {
-    // TODO: Implement
-    console.log('Closing database connection');
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
   }
 }
 
