@@ -9,7 +9,11 @@
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "discover-theaters": "ts-node --project tsconfig.scripts.json scripts/discover-theaters.ts",
+    "scrape-shows": "ts-node --project tsconfig.scripts.json scripts/scrape-shows.ts",
+    "publish": "ts-node --project tsconfig.scripts.json scripts/publish.ts",
+    "dev:generate": "ts-node --project tsconfig.scripts.json scripts/dev-generate.ts"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
@@ -33,6 +37,7 @@
     "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.6.0"
   }
 }

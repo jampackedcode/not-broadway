@@ -14,12 +14,20 @@ import { scrapeShows } from '../scraper/jobs/scrape-shows';
 import { closeDatabase } from '../scraper/db/client';
 
 async function main() {
+  // Parse command-line arguments
+  const args = process.argv.slice(2);
+  const scraperName = args[0]; // Optional scraper name
+
   console.log('==================================================');
   console.log('Show Scraping Job');
   console.log('==================================================\n');
 
+  if (scraperName) {
+    console.log(`Running for scraper: ${scraperName}\n`);
+  }
+
   try {
-    const result = await scrapeShows();
+    const result = await scrapeShows(scraperName);
 
     console.log('\n==================================================');
     console.log('Job Summary');
