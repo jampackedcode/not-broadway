@@ -3,14 +3,17 @@
 import { useShowStore } from '@/store/useShowStore';
 import ShowCard from '@/components/ShowCard';
 import FilterPanel from '@/components/FilterPanel';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function Home() {
+  // Use useShallow to prevent infinite re-renders from object recreation
   // Subscribe to both filters and the getter function
-  // Accessing state.filters directly ensures Zustand tracks it as a dependency
-  const { filters, getFilteredShows } = useShowStore((state) => ({
-    filters: state.filters,
-    getFilteredShows: state.getFilteredShows,
-  }));
+  const { filters, getFilteredShows } = useShowStore(
+    useShallow((state) => ({
+      filters: state.filters,
+      getFilteredShows: state.getFilteredShows,
+    }))
+  );
 
   // Call getFilteredShows() which will use the current filters from the store
   const filteredShows = getFilteredShows();
