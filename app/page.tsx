@@ -5,8 +5,15 @@ import ShowCard from '@/components/ShowCard';
 import FilterPanel from '@/components/FilterPanel';
 
 export default function Home() {
-  // Call getFilteredShows() inside the selector to subscribe to filter changes
-  const filteredShows = useShowStore((state) => state.getFilteredShows());
+  // Subscribe to both filters and the getter function
+  // Accessing state.filters directly ensures Zustand tracks it as a dependency
+  const { filters, getFilteredShows } = useShowStore((state) => ({
+    filters: state.filters,
+    getFilteredShows: state.getFilteredShows,
+  }));
+
+  // Call getFilteredShows() which will use the current filters from the store
+  const filteredShows = getFilteredShows();
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
