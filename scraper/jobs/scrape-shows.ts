@@ -1,6 +1,6 @@
 import { getDatabase } from '../db/client';
 import { TheaterQueries, ShowQueries, ScraperRunQueries } from '../db/queries';
-import { getEnabledScrapers } from '../sources';
+import { getEnabledScrapers, getScraperByName } from '../sources';
 import { JobResult } from '../../types/scraper';
 
 /**
@@ -8,9 +8,11 @@ import { JobResult } from '../../types/scraper';
  *
  * This job runs daily to scrape show information for all active theaters.
  * It updates the database with current show listings and marks expired shows as inactive.
+ *
+ * @param scraperName - Optional scraper name to run only that scraper
  */
 
-export async function scrapeShows(): Promise<JobResult> {
+export async function scrapeShows(scraperName?: string): Promise<JobResult> {
   const jobName = 'scrape-shows';
   const startedAt = new Date();
   const errors: string[] = [];
@@ -39,9 +41,22 @@ export async function scrapeShows(): Promise<JobResult> {
     const theaters = theaterQueries.getAllActive();
     console.log(`[${jobName}] Found ${theaters.length} active theaters`);
 
-    // Get all enabled scrapers
-    const scrapers = getEnabledScrapers();
-    console.log(`[${jobName}] Found ${scrapers.length} enabled scrapers`);
+    // Get scrapers to use
+    let scrapers;
+    if (scraperName) {
+      const scraper = getScraperByName(scraperName);
+      if (!scraper) {
+        throw new Error(`Scraper not found: ${scraperName}`);
+      }
+      if (!scraper.config.enabled) {
+        console.warn(`[${jobName}] Warning: ${scraperName} is disabled but will run anyway`);
+      }
+      scrapers = [scraper];
+      console.log(`[${jobName}] Running single scraper: ${scraper.config.name}`);
+    } else {
+      scrapers = getEnabledScrapers();
+      console.log(`[${jobName}] Found ${scrapers.length} enabled scrapers`);
+    }
 
     // For each theater, try to scrape shows using available scrapers
     for (const theater of theaters) {

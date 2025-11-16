@@ -1,4 +1,5 @@
-export { IScraper, BaseScraper } from './base';
+export type { IScraper } from './base';
+export { BaseScraper } from './base';
 export { NewYorkTheaterScraper } from './newyorktheater';
 export { FreshGroundPepperScraper } from './freshgroundpepper';
 export { ArtNewYorkScraper } from './artnewyork';
@@ -22,4 +23,13 @@ export const SCRAPERS: IScraper[] = [
  */
 export function getEnabledScrapers(): IScraper[] {
   return SCRAPERS.filter((scraper) => scraper.config.enabled);
+}
+
+/**
+ * Get a scraper by name
+ */
+export function getScraperByName(name: string): IScraper | undefined {
+  return SCRAPERS.find(
+    (scraper) => scraper.config.name.toLowerCase() === name.toLowerCase()
+  );
 }

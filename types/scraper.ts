@@ -1,5 +1,8 @@
 import { Theater, Show } from './index';
 
+// Re-export Theater and Show for use in scrapers
+export type { Theater, Show };
+
 /**
  * Scraper Result Types
  */

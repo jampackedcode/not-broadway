@@ -14,12 +14,20 @@ import { discoverTheaters } from '../scraper/jobs/discover-theaters';
 import { closeDatabase } from '../scraper/db/client';
 
 async function main() {
+  // Parse command-line arguments
+  const args = process.argv.slice(2);
+  const scraperName = args[0]; // Optional scraper name
+
   console.log('==================================================');
   console.log('Theater Discovery Job');
   console.log('==================================================\n');
 
+  if (scraperName) {
+    console.log(`Running for scraper: ${scraperName}\n`);
+  }
+
   try {
-    const result = await discoverTheaters();
+    const result = await discoverTheaters(scraperName);
 
     console.log('\n==================================================');
     console.log('Job Summary');
