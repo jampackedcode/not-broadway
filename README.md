@@ -12,56 +12,456 @@ While NYC has many publications covering Broadway shows, there's significantly l
 
 ## Architecture
 
-The project uses a **static blob approach** for serving data:
+### Overview: Static Blob Approach
+
+The project uses a **static blob architecture** that separates data collection from data serving. This design optimizes for simplicity, cost, and performance given our constraints:
+
+- Dataset size: ~200KB gzipped (~50-100 theaters, ~500 shows)
+- Update frequency: Daily for shows, weekly for theaters
+- Query patterns: Heavy filtering (by date, genre, neighborhood, etc.)
+- Traffic: Read-heavy, no writes from frontend
 
 ```
 ┌─────────────────┐
 │  Scraper Cron   │  (Weekly/Daily)
-│  (TypeScript)   │
+│  (TypeScript)   │  Scheduled jobs running on server/CI
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
 │  SQLite DB      │  (Local state, dedupe, history)
-│  (scraper.db)   │
+│  (scraper.db)   │  Single file, ~1-2MB, tracks all changes
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
 │  Export Script  │  (Generates JSON blob)
-│                 │
+│                 │  Filters active records, strips metadata
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
 │  Upload to S3   │  → https://cdn.example.com/shows.json
-│  or GCS         │
+│  or GCS         │  CDN-cached, gzipped, public read
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
 │  Frontend       │  (Fetches once, filters in-browser)
-│  (Next.js)      │
+│  (Next.js)      │  Zustand store handles all filtering
 └─────────────────┘
 ```
 
-### Why Static Blob?
+### Architecture Decisions
 
-- **Small dataset**: ~200KB gzipped
-- **No real-time updates needed**: Daily/weekly scraping is sufficient
-- **Simple**: No API to manage or scale
-- **Fast**: Single HTTP request, client-side filtering
-- **Cheap**: CDN hosting vs. database costs
-- **Works with Zustand**: Frontend already handles all filtering
+#### Why Static Blob?
 
-### SQLite Benefits
+**Advantages:**
+- **Simplicity**: No API layer, authentication, rate limiting, or server scaling
+- **Performance**: Single CDN request (~200KB) vs. hundreds of API calls
+- **Cost**: $0.01/month for storage vs. $50+/month for database hosting
+- **Caching**: CDN handles global distribution and caching automatically
+- **Reliability**: No database downtime, connection limits, or query timeouts
+- **Frontend Control**: Zustand store already implements sophisticated filtering
 
-While the frontend uses a static JSON blob, SQLite is used in the scraper for:
+**Trade-offs:**
+- Can't support real-time updates (but not needed for theater schedules)
+- Full dataset sent to client (but it's small enough to be negligible)
+- No per-user filtering on server (but we don't have user accounts)
 
-- **Deduplication**: Prevent duplicate theaters/shows
-- **Historical tracking**: Know when shows were added/updated
-- **Data validation**: Enforce schema and relationships
-- **Incremental updates**: Only scrape what's changed
+**When to Migrate:**
+If dataset grows beyond 1-2MB, consider:
+- API with server-side filtering
+- Database-backed queries
+- GraphQL for flexible querying
+
+#### Why SQLite for Scraping?
+
+SQLite serves as the **source of truth** during data collection:
+
+**Deduplication:**
+```typescript
+// Without SQLite: Manual array searching, O(n) lookups
+const existing = theaters.find(t => t.name === newTheater.name);
+
+// With SQLite: Indexed queries, O(log n) lookups
+const existing = theaterQueries.findByName(newTheater.name);
+```
+
+**Historical Tracking:**
+- Know when each show was first discovered
+- Track updates to show details (date changes, price changes)
+- Identify theaters that have closed
+- Audit trail for debugging scraper issues
+
+**Data Validation:**
+- Foreign key constraints ensure shows reference valid theaters
+- CHECK constraints enforce enum types (genre, theater type)
+- NOT NULL constraints catch incomplete scraping
+- Schema validation happens at write-time, not export-time
+
+**Incremental Updates:**
+```sql
+-- Find shows that haven't been scraped recently
+SELECT * FROM shows
+WHERE theater_id = ?
+AND last_scraped_at < datetime('now', '-1 day');
+
+-- Mark expired shows as inactive
+UPDATE shows
+SET is_active = 0
+WHERE end_date < date('now');
+```
+
+### Detailed Data Flow
+
+#### Phase 1: Theater Discovery (Weekly)
+
+```
+1. Scraper loads enabled sources
+   └─> NewYorkTheaterScraper, FreshGroundPepperScraper, ArtNewYorkScraper
+
+2. For each scraper:
+   ├─> Fetch theater listings from source
+   ├─> Parse HTML/JSON into Theater objects
+   ├─> Generate stable IDs (hash of name + address)
+   ├─> Check if theater exists in DB
+   │   ├─> If exists: Update fields, bump last_scraped_at
+   │   └─> If new: Insert with source attribution
+   └─> Record results in scraper_runs table
+
+3. Log summary:
+   └─> "Processed: 15, Added: 2, Updated: 13, Errors: 0"
+```
+
+**Key Implementation Detail:**
+```typescript
+// Stable ID generation prevents duplicates
+function generateTheaterId(name: string, address: string): string {
+  const normalized = `${name.toLowerCase().trim()}|${address.toLowerCase().trim()}`;
+  return crypto.createHash('sha256').update(normalized).digest('hex').slice(0, 16);
+}
+```
+
+#### Phase 2: Show Scraping (Daily)
+
+```
+1. Mark expired shows as inactive
+   └─> UPDATE shows SET is_active = 0 WHERE end_date < date('now')
+
+2. Get all active theaters from DB
+   └─> SELECT * FROM theaters WHERE is_active = 1
+
+3. For each theater:
+   ├─> Try each scraper until one succeeds
+   │   ├─> Visit theater website or aggregator page
+   │   ├─> Parse show listings
+   │   └─> Extract: title, dates, genre, price, description
+   ├─> For each show found:
+   │   ├─> Generate show ID (hash of theater + title + start date)
+   │   ├─> Check if exists in DB
+   │   │   ├─> If exists: Update fields if changed
+   │   │   └─> If new: Insert new show
+   │   └─> Record scraped_url for debugging
+   └─> Handle failures gracefully (continue to next theater)
+
+4. Log summary:
+   └─> "Processed: 250, Added: 12, Updated: 30, Errors: 3"
+```
+
+**Resilience Features:**
+- Rate limiting: 2 second delay between requests
+- Retry logic: 3 attempts with exponential backoff
+- Source fallback: Try multiple scrapers per theater
+- Error isolation: One failed theater doesn't stop the job
+
+#### Phase 3: Blob Generation & Publishing
+
+```
+1. Query database for active records
+   ├─> SELECT * FROM theaters WHERE is_active = 1
+   └─> SELECT * FROM shows WHERE is_active = 1
+
+2. Transform to frontend types
+   ├─> Strip metadata (created_at, source, last_scraped_at)
+   ├─> Convert snake_case to camelCase
+   ├─> Nest ticket prices: { min, max }
+   └─> Calculate statistics
+
+3. Generate metadata
+   ├─> version: "1.0.0"
+   ├─> generatedAt: "2025-11-16T21:00:00Z"
+   ├─> totalTheaters: 87
+   ├─> totalShows: 423
+   ├─> activeShows: 156 (currently running)
+   ├─> upcomingShows: 267 (future start date)
+   └─> sources: ["newyorktheater", "freshgroundpepper", "artnewyork"]
+
+4. Write JSON blob
+   └─> public/shows.json (dev) or data/shows.json (prod)
+
+5. Upload to cloud (optional)
+   ├─> Authenticate with cloud provider
+   ├─> Upload with Content-Type: application/json
+   ├─> Set Cache-Control: public, max-age=3600
+   └─> Return public URL
+```
+
+**Blob Structure:**
+```json
+{
+  "metadata": {
+    "version": "1.0.0",
+    "generatedAt": "2025-11-16T21:00:00Z",
+    "totalTheaters": 87,
+    "totalShows": 423,
+    "activeShows": 156,
+    "upcomingShows": 267,
+    "sources": ["newyorktheater", "freshgroundpepper"]
+  },
+  "theaters": [
+    {
+      "id": "abc123...",
+      "name": "The Public Theater",
+      "address": "425 Lafayette St",
+      "neighborhood": "East Village",
+      "type": "non-profit",
+      "website": "https://publictheater.org",
+      "seatingCapacity": 299
+    }
+  ],
+  "shows": [
+    {
+      "id": "xyz789...",
+      "title": "Hamilton",
+      "theaterId": "abc123...",
+      "description": "...",
+      "startDate": "2025-01-15",
+      "endDate": "2025-03-30",
+      "genre": "musical",
+      "runtime": 165,
+      "ticketPriceRange": { "min": 79, "max": 199 },
+      "website": "https://...",
+      "imageUrl": "https://..."
+    }
+  ]
+}
+```
+
+#### Phase 4: Frontend Consumption
+
+```
+1. Initial page load
+   └─> fetch('/shows.json') or fetch('https://cdn.../shows.json')
+
+2. Zustand store hydration
+   ├─> setTheaters(blob.theaters)
+   ├─> setShows(blob.shows)
+   └─> setMetadata(blob.metadata)
+
+3. User interaction (e.g., filter by genre)
+   ├─> Zustand selector: shows.filter(s => s.genre === 'musical')
+   ├─> Zustand selector: theaters.filter(t => shows.map(s => s.theaterId).includes(t.id))
+   └─> React re-renders with filtered data
+
+4. All subsequent filtering
+   └─> In-memory array operations (no network requests)
+```
+
+**Performance:**
+- Initial load: ~200KB over network (one-time)
+- Filter updates: <1ms (array operations on ~500 items)
+- No loading states after initial fetch
+- No pagination needed
+
+### Component Responsibilities
+
+#### Scrapers (`scraper/sources/`)
+
+**Responsibilities:**
+- Fetch HTML/JSON from source websites
+- Parse DOM/data structures to extract theater/show info
+- Normalize data into standard types
+- Handle site-specific quirks and edge cases
+- Respect rate limits and terms of service
+
+**Interface:**
+```typescript
+interface IScraper {
+  config: ScraperConfig;
+  discoverTheaters(): Promise<ScraperResult<TheaterScraperResult>>;
+  scrapeShows(theaterId: string, url?: string): Promise<ScraperResult<ShowScraperResult>>;
+}
+```
+
+**Design Pattern:**
+- Abstract base class provides rate limiting and retry logic
+- Concrete implementations handle site-specific parsing
+- Registry pattern enables/disables scrapers via config
+
+#### Database Layer (`scraper/db/`)
+
+**Responsibilities:**
+- Schema management and migrations
+- CRUD operations with type safety
+- Query optimization with indexes
+- Transaction management for consistency
+
+**Separation of Concerns:**
+- `schema.ts`: DDL statements (CREATE TABLE, CREATE INDEX)
+- `client.ts`: Connection management and low-level operations
+- `queries.ts`: High-level business logic (upsert, findByName, etc.)
+
+#### Jobs (`scraper/jobs/`)
+
+**Responsibilities:**
+- Orchestrate scraper execution
+- Handle errors and continue processing
+- Track metrics and log results
+- Record job runs for monitoring
+
+**Error Handling Philosophy:**
+- Individual failures don't stop the job
+- Errors are logged but don't throw
+- Final success based on error count vs. threshold
+- Detailed logging for post-mortem analysis
+
+#### Export (`scraper/export/`)
+
+**Responsibilities:**
+- Query database for active records
+- Transform database records to API types
+- Calculate metadata and statistics
+- Write JSON with proper formatting
+- Upload to cloud storage
+
+**Data Transformation:**
+```typescript
+// Database record (internal)
+interface ShowRecord {
+  id: string;
+  title: string;
+  theater_id: string;        // snake_case
+  ticket_price_min: number;  // flat structure
+  ticket_price_max: number;
+  source: string;            // metadata
+  created_at: string;        // metadata
+  is_active: boolean;        // metadata
+}
+
+// Frontend type (public)
+interface Show {
+  id: string;
+  title: string;
+  theaterId: string;                        // camelCase
+  ticketPriceRange?: { min: number; max: number; }  // nested
+  // metadata fields removed
+}
+```
+
+### Data Freshness & Updates
+
+**Update Frequency:**
+- **Theaters**: Weekly (Sundays at midnight)
+  - Theaters rarely open/close
+  - Details (website, capacity) change infrequently
+
+- **Shows**: Daily (every day at midnight)
+  - Show schedules change frequently
+  - New shows added regularly
+  - Dates extended/shortened based on sales
+
+**Cache Strategy:**
+```
+CDN: Cache-Control: public, max-age=3600
+├─> Users get updates within 1 hour
+└─> Reduces origin requests by 99%
+
+Origin: Update daily via cron
+├─> Low traffic to storage
+└─> Predictable costs
+```
+
+**Data Staleness:**
+- Maximum staleness: 25 hours (1hr cache + 24hr cron)
+- Acceptable for theater schedules (vs. stock prices)
+- Can force cache clear for urgent updates
+
+### Error Handling & Monitoring
+
+**Scraper Failures:**
+```typescript
+// Individual theater scraping fails
+└─> Log error, continue to next theater
+    └─> Job success if <10% failure rate
+
+// Entire scraper source fails
+└─> Try next scraper in registry
+    └─> Job success if any scraper succeeds
+
+// All scrapers fail for a theater
+└─> Log warning, theater data goes stale
+    └─> Next run will retry
+```
+
+**Database Integrity:**
+- Foreign key constraints prevent orphaned shows
+- Unique indexes prevent duplicate entries
+- CHECK constraints validate enum values
+- Transactions ensure all-or-nothing updates
+
+**Monitoring Metrics:**
+```sql
+-- Track scraper health
+SELECT job_name, success, errors
+FROM scraper_runs
+WHERE started_at > datetime('now', '-7 days')
+ORDER BY started_at DESC;
+
+-- Find theaters with stale data
+SELECT name, last_scraped_at
+FROM theaters
+WHERE last_scraped_at < datetime('now', '-7 days');
+
+-- Measure data growth
+SELECT DATE(created_at) as date, COUNT(*) as new_shows
+FROM shows
+GROUP BY DATE(created_at)
+ORDER BY date DESC
+LIMIT 30;
+```
+
+### Scalability Considerations
+
+**Current Architecture (Static Blob):**
+- Works well for: 50-500 theaters, 500-5,000 shows
+- Blob size: 200KB-2MB (acceptable for web)
+- Scraping time: <30 minutes (acceptable for cron)
+
+**Migration Paths:**
+
+**Phase 1: Large Dataset (5,000-50,000 shows)**
+- Implement pagination in frontend
+- Split blob by region or date range
+- Client fetches multiple smaller blobs
+- SQLite still works fine for scraper
+
+**Phase 2: Massive Dataset (>50,000 shows)**
+- Add API layer with server-side filtering
+- Migrate scraper to PostgreSQL
+- Implement search indexes (Elasticsearch)
+- Consider microservices for each scraper
+
+**Phase 3: Real-time Updates**
+- WebSocket connections for live updates
+- Event-driven architecture
+- Change data capture from database
+- Redis pub/sub for notifications
+
+**Current Decision: Stay in Phase 0**
+- NYC theater scene is ~100-200 active venues
+- Average 3-5 shows per venue = 300-1,000 shows
+- Well within static blob capacity
 
 ## Project Structure
 
