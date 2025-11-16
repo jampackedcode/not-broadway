@@ -17,6 +17,7 @@ const customJestConfig = {
     'app/**/*.{js,jsx,ts,tsx}',
     'store/**/*.{js,jsx,ts,tsx}',
     'lib/**/*.{js,jsx,ts,tsx}',
+    'scraper/**/*.{js,jsx,ts,tsx}',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',
