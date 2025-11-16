@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { Theater, Show, ShowWithTheater, ShowGenre, TheaterType } from '@/types';
-import { mockTheaters, mockShows } from '@/lib/mockData';
 
 interface ShowFilters {
   genre?: ShowGenre;
@@ -15,8 +14,14 @@ interface ShowStore {
   theaters: Theater[];
   shows: Show[];
   filters: ShowFilters;
+  isLoading: boolean;
+  error: string | null;
 
   // Actions
+  setTheaters: (theaters: Theater[]) => void;
+  setShows: (shows: Show[]) => void;
+  setLoading: (isLoading: boolean) => void;
+  setError: (error: string | null) => void;
   setFilters: (filters: Partial<ShowFilters>) => void;
   resetFilters: () => void;
 
@@ -28,9 +33,16 @@ interface ShowStore {
 }
 
 export const useShowStore = create<ShowStore>((set, get) => ({
-  theaters: mockTheaters,
-  shows: mockShows,
+  theaters: [],
+  shows: [],
   filters: {},
+  isLoading: false,
+  error: null,
+
+  setTheaters: (theaters) => set({ theaters }),
+  setShows: (shows) => set({ shows }),
+  setLoading: (isLoading) => set({ isLoading }),
+  setError: (error) => set({ error }),
 
   setFilters: (newFilters) =>
     set((state) => ({
