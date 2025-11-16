@@ -47,25 +47,28 @@ export async function generateBlob(
     seatingCapacity: record.seatingCapacity,
   }));
 
-  const shows: Show[] = showRecords.map((record) => ({
-    id: record.id,
-    title: record.title,
-    theaterId: record.theater_id,
-    description: record.description,
-    startDate: record.start_date,
-    endDate: record.end_date,
-    genre: record.genre,
-    runtime: record.runtime,
-    ticketPriceRange:
-      record.ticket_price_min && record.ticket_price_max
-        ? {
-            min: record.ticket_price_min,
-            max: record.ticket_price_max,
-          }
-        : undefined,
-    website: record.website,
-    imageUrl: record.image_url,
-  }));
+  const shows: Show[] = showRecords.map((record) => {
+    const r = record as any; // Use 'any' to access database field names
+    return {
+      id: record.id,
+      title: record.title,
+      theaterId: r.theater_id,
+      description: record.description,
+      startDate: r.start_date,
+      endDate: r.end_date,
+      genre: record.genre,
+      runtime: record.runtime,
+      ticketPriceRange:
+        r.ticket_price_min && r.ticket_price_max
+          ? {
+              min: r.ticket_price_min,
+              max: r.ticket_price_max,
+            }
+          : undefined,
+      website: record.website,
+      imageUrl: r.image_url,
+    };
+  });
 
   // Calculate statistics
   const now = new Date();

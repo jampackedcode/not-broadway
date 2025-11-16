@@ -1,0 +1,201 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "generatedAt": "2025-11-16T23:24:04.919Z",
+    "totalTheaters": 5,
+    "totalShows": 9,
+    "activeShows": 5,
+    "upcomingShows": 4,
+    "sources": [
+      "manual-seed"
+    ]
+  },
+  "theaters": [
+    {
+      "id": "2a5cdbb6eff71690",
+      "name": "Cherry Lane Theatre",
+      "address": "38 Commerce St, New York, NY 10014",
+      "neighborhood": "West Village",
+      "type": "off-broadway",
+      "website": "https://cherrylane.org"
+    },
+    {
+      "id": "7e64d195d45f6242",
+      "name": "Signature Theatre",
+      "address": "480 W 42nd St, New York, NY 10036",
+      "neighborhood": "Hell's Kitchen",
+      "type": "non-profit",
+      "website": "https://signaturetheatre.org"
+    },
+    {
+      "id": "e2c3ba83a5a22962",
+      "name": "Soho Playhouse",
+      "address": "15 Vandam St, New York, NY 10013",
+      "neighborhood": "SoHo",
+      "type": "off-broadway",
+      "website": "https://sohoplayhouse.com"
+    },
+    {
+      "id": "290b6f6930a1bffb",
+      "name": "The Brick Theater",
+      "address": "579 Metropolitan Ave, Brooklyn, NY 11211",
+      "neighborhood": "Williamsburg",
+      "type": "off-off-broadway",
+      "website": "https://bricktheater.com"
+    },
+    {
+      "id": "2276e2392d067bf1",
+      "name": "The Public Theater",
+      "address": "425 Lafayette St, New York, NY 10003",
+      "neighborhood": "East Village",
+      "type": "non-profit",
+      "website": "https://publictheater.org"
+    }
+  ],
+  "shows": [
+    {
+      "id": "97707ab7b9237f31",
+      "title": "Puffs",
+      "theaterId": "e2c3ba83a5a22962",
+      "description": "A hilarious play for anyone who has never been destined to save the world.",
+      "startDate": "2025-10-15",
+      "endDate": "2026-03-30",
+      "genre": "comedy",
+      "runtime": 100,
+      "ticketPriceRange": {
+        "min": 45,
+        "max": 89
+      },
+      "website": "https://sohoplayhouse.com/puffs",
+      "imageUrl": null
+    },
+    {
+      "id": "90b4e50237556820",
+      "title": "Fat Ham",
+      "theaterId": "2276e2392d067bf1",
+      "description": "A Pulitzer Prize-winning play that spins Shakespeare's Hamlet into a Black southern barbecue.",
+      "startDate": "2025-11-01",
+      "endDate": "2025-12-15",
+      "genre": "drama",
+      "runtime": 90,
+      "ticketPriceRange": {
+        "min": 55,
+        "max": 125
+      },
+      "website": "https://publictheater.org/productions/fat-ham",
+      "imageUrl": null
+    },
+    {
+      "id": "efaff36e481bd15c",
+      "title": "The Piano Lesson",
+      "theaterId": "7e64d195d45f6242",
+      "description": "August Wilson's powerful drama about family legacy and the weight of history.",
+      "startDate": "2025-11-05",
+      "endDate": "2026-01-20",
+      "genre": "drama",
+      "runtime": 135,
+      "ticketPriceRange": {
+        "min": 60,
+        "max": 130
+      },
+      "website": "https://signaturetheatre.org/piano-lesson",
+      "imageUrl": null
+    },
+    {
+      "id": "d70e46d12aacbe94",
+      "title": "The Collapse",
+      "theaterId": "290b6f6930a1bffb",
+      "description": "An experimental piece exploring the breakdown of modern society through movement and sound.",
+      "startDate": "2025-11-10",
+      "endDate": "2025-11-30",
+      "genre": "experimental",
+      "runtime": 75,
+      "ticketPriceRange": {
+        "min": 20,
+        "max": 35
+      },
+      "website": null,
+      "imageUrl": null
+    },
+    {
+      "id": "4c42c4034e4b2e5d",
+      "title": "The Vagina Monologues",
+      "theaterId": "2a5cdbb6eff71690",
+      "description": "Eve Ensler's groundbreaking work celebrating women's sexuality and strength.",
+      "startDate": "2025-11-15",
+      "endDate": "2026-01-15",
+      "genre": "solo-show",
+      "runtime": 95,
+      "ticketPriceRange": {
+        "min": 50,
+        "max": 95
+      },
+      "website": "https://cherrylane.org/vagina-monologues",
+      "imageUrl": null
+    },
+    {
+      "id": "688ec532c617f3af",
+      "title": "Solo Stories Vol. 5",
+      "theaterId": "290b6f6930a1bffb",
+      "description": "An evening of personal narratives and solo performances from emerging artists.",
+      "startDate": "2025-12-01",
+      "endDate": "2025-12-15",
+      "genre": "solo-show",
+      "runtime": 60,
+      "ticketPriceRange": {
+        "min": 15,
+        "max": 25
+      },
+      "website": null,
+      "imageUrl": null
+    },
+    {
+      "id": "9794b9f8384cfc88",
+      "title": "A Midsummer Night's Dream",
+      "theaterId": "2276e2392d067bf1",
+      "description": "Shakespeare's beloved comedy about love, magic, and mischief in an enchanted forest.",
+      "startDate": "2025-12-20",
+      "endDate": "2026-02-28",
+      "genre": "comedy",
+      "runtime": 120,
+      "ticketPriceRange": {
+        "min": 65,
+        "max": 145
+      },
+      "website": "https://publictheater.org/productions/midsummer",
+      "imageUrl": null
+    },
+    {
+      "id": "573ecbabd6805a25",
+      "title": "Blood Knot",
+      "theaterId": "7e64d195d45f6242",
+      "description": "Athol Fugard's gripping exploration of brotherhood and identity in apartheid South Africa.",
+      "startDate": "2026-02-01",
+      "endDate": "2026-03-31",
+      "genre": "drama",
+      "runtime": 110,
+      "ticketPriceRange": {
+        "min": 60,
+        "max": 130
+      },
+      "website": null,
+      "imageUrl": null
+    },
+    {
+      "id": "928c6bfcb6c47553",
+      "title": "Urinetown",
+      "theaterId": "2a5cdbb6eff71690",
+      "description": "A satirical musical comedy about a town where private toilets are banned.",
+      "startDate": "2026-02-10",
+      "endDate": "2026-04-30",
+      "genre": "musical",
+      "runtime": 125,
+      "ticketPriceRange": {
+        "min": 55,
+        "max": 110
+      },
+      "website": null,
+      "imageUrl": null
+    }
+  ]
+}
