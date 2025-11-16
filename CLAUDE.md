@@ -1,14 +1,14 @@
 ### High Level Project Goals
-1. develop an easy to front-end website for people to use to browse upcoming theatre shows that aren't broadway
+1. develop an easy-to-use front-end website for people to use to browse upcoming theatre shows that aren't broadway
 2. Develop a backend webscraper and information aggregator for theatre shows
 3. Develop a 
 
 ### Immediate Tasks
-1. Develop an easy to front-end website for people to use to browse upcoming theatre shows that aren't broadway
+1. Develop an easy-to-use front-end website for people to use to browse upcoming theatre shows that aren't broadway
 2. Mock data model for searching and filtering for the front-end
 
 ### Motivation
-In the NYC area there are plenty of publications that host a menu of broadway shows. However, there is a lot less available information online for upcoming off-broadway, off-off-broadway and non-profit theatres. Some of this information is scattered across the internet and used to exist in legacy print media, e.g. The Villiage Voice, but in the modern age of post-covid NYC there is a lack of an aggregation of information.
+In the NYC area there are plenty of publications that host a menu of broadway shows. However, there is a lot less available information online for upcoming off-broadway, off-off-broadway and non-profit theatres. Some of this information is scattered across the internet and used to exist in legacy print media, e.g. The Village Voice, but in the modern age of post-covid NYC there is a lack of an aggregation of information.
 
 ### External Links
 The following websites are a starting point for aggregating information:
