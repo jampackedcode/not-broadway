@@ -47,12 +47,19 @@ export async function generateBlob(
     seatingCapacity: record.seatingCapacity,
   }));
 
+  // Create theater lookup map for denormalization
+  const theaterMap = new Map(theaters.map((t) => [t.id, t]));
+
   const shows: Show[] = showRecords.map((record) => {
     const r = record as any; // Use 'any' to access database field names
+    const theaterId = r.theater_id;
+    const theater = theaterMap.get(theaterId);
+
     return {
       id: record.id,
       title: record.title,
-      theaterId: r.theater_id,
+      theaterId,
+      theaterName: theater?.name, // Denormalized for human readability
       description: record.description,
       startDate: r.start_date,
       endDate: r.end_date,
