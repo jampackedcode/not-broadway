@@ -1,7 +1,7 @@
 ### High Level Project Goals
 1. develop an easy-to-use front-end website for people to use to browse upcoming theatre shows that aren't broadway
 2. Develop a backend webscraper and information aggregator for theatre shows
-3. Develop a 
+3. Develop a lightweight database and API to serve theatre show data with quick load times
 
 ### Immediate Tasks
 1. Develop an easy-to-use front-end website for people to use to browse upcoming theatre shows that aren't broadway
