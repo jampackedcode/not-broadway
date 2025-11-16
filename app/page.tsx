@@ -5,8 +5,8 @@ import ShowCard from '@/components/ShowCard';
 import FilterPanel from '@/components/FilterPanel';
 
 export default function Home() {
-  const getFilteredShows = useShowStore((state) => state.getFilteredShows);
-  const filteredShows = getFilteredShows();
+  // Call getFilteredShows() inside the selector to subscribe to filter changes
+  const filteredShows = useShowStore((state) => state.getFilteredShows());
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
