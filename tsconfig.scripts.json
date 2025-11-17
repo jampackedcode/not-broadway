@@ -5,7 +5,8 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "isolatedModules": false
+    "isolatedModules": false,
+    "types": ["node"]
   },
   "include": ["scripts/**/*", "scraper/**/*", "types/**/*"],
   "exclude": ["node_modules"]

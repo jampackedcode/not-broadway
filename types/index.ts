@@ -17,6 +17,8 @@ export interface Theater {
   type: TheaterType;
   website?: string;
   seatingCapacity?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Show {

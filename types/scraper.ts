@@ -35,6 +35,8 @@ export interface TheaterRecord extends Theater {
   lastScrapedAt: string;
   source: string; // Which scraper discovered this theater
   isActive: boolean; // Whether the theater is still operating
+  geocodedAt?: string; // When the theater was geocoded
+  geocodeSource?: string; // Which service geocoded the address
 }
 
 export interface ShowRecord extends Show {

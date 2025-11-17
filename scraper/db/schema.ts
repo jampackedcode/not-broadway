@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS theaters (
   type TEXT NOT NULL CHECK(type IN ('off-broadway', 'off-off-broadway', 'non-profit')),
   website TEXT,
   seating_capacity INTEGER,
+  latitude REAL,
+  longitude REAL,
+  geocoded_at TEXT,
+  geocode_source TEXT,
   source TEXT NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -73,6 +77,7 @@ export const INDEXES_SQL = [
   'CREATE INDEX IF NOT EXISTS idx_theaters_neighborhood ON theaters(neighborhood);',
   'CREATE INDEX IF NOT EXISTS idx_theaters_source ON theaters(source);',
   'CREATE INDEX IF NOT EXISTS idx_theaters_is_active ON theaters(is_active);',
+  'CREATE INDEX IF NOT EXISTS idx_theaters_coordinates ON theaters(latitude, longitude);',
 
   'CREATE INDEX IF NOT EXISTS idx_shows_theater_id ON shows(theater_id);',
   'CREATE INDEX IF NOT EXISTS idx_shows_start_date ON shows(start_date);',
