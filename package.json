@@ -17,14 +17,23 @@
     "publish": "ts-node --project tsconfig.scripts.json scripts/publish.ts",
     "dev:generate": "ts-node --project tsconfig.scripts.json scripts/dev-generate.ts",
     "migrate:coordinates": "ts-node --project tsconfig.scripts.json scripts/migrate-add-coordinates.ts",
-    "geocode-theaters": "ts-node --project tsconfig.scripts.json scripts/geocode-theaters.ts"
+    "geocode-theaters": "ts-node --project tsconfig.scripts.json scripts/geocode-theaters.ts",
+    "scraper:build": "tsc --project scraper/tsconfig.json",
+    "scraper:squarespace": "ts-node --project scraper/tsconfig.json scraper/src/platforms/squarespace.ts",
+    "scraper:wordpress": "ts-node --project scraper/tsconfig.json scraper/src/platforms/wordpress-spektrix.ts",
+    "scraper:ovationtix": "ts-node --project scraper/tsconfig.json scraper/src/platforms/ovationtix.ts"
   },
   "dependencies": {
+    "axios": "^1.13.2",
     "better-sqlite3": "^12.4.1",
+    "cheerio": "^1.1.2",
     "date-fns": "^4.1.0",
     "next": "^15.0.0",
+    "p-retry": "^7.1.0",
+    "playwright": "^1.56.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "zod": "^4.1.12",
     "zustand": "^5.0.1"
   },
   "devDependencies": {
@@ -32,6 +41,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/cheerio": "^0.22.35",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.0",
