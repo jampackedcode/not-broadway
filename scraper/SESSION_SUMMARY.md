@@ -346,10 +346,12 @@ Shows found: 88
 # Clone and setup
 git checkout claude/create-theater-scrapers-01LBrTjVUK4itvr6bkyAeE1p
 cd scraper
-pip install -r requirements.txt
 
-# Run a scraper
-python platforms/squarespace.py
+# Install dependencies with uv (fast!)
+uv sync
+
+# Run a scraper (no venv activation needed with uv run)
+uv run python platforms/squarespace.py
 
 # See next steps
 cat NEXT_STEPS.md
