@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "last_updated": "2025-11-17",
+    "total_theaters": 127,
+    "configured_theaters": 0
+  },
+  "theaters": {
+    "the_flea_theater": {
+      "name": "The Flea Theater",
+      "url": "https://web.ovationtix.com/trs/store/14",
+      "platform": "ovationtix",
+      "store_id": "14",
+      "calendar_url": "https://web.ovationtix.com/trs/cal/14",
+      "active": true
+    },
+    "red_bull_theater": {
+      "name": "Red Bull Theater",
+      "url": "https://web.ovationtix.com/trs/store/2722",
+      "platform": "ovationtix",
+      "store_id": "2722",
+      "calendar_url": "https://web.ovationtix.com/trs/cal/2722",
+      "active": true
+    },
+    "nytw": {
+      "name": "New York Theatre Workshop",
+      "url": "https://www.nytw.org",
+      "platform": "wordpress_spektrix",
+      "api_endpoint": "https://www.nytw.org/wp-json/spektrix/v1",
+      "active": true
+    },
+    "soho_rep": {
+      "name": "Soho Rep",
+      "url": "https://sohorep.org",
+      "platform": "wordpress",
+      "active": true
+    },
+    "mint_theater": {
+      "name": "Mint Theater Company",
+      "url": "https://minttheater.org",
+      "platform": "wordpress",
+      "active": true
+    },
+    "54_below": {
+      "name": "54 Below",
+      "url": "https://54below.org",
+      "platform": "wordpress_salesforce",
+      "salesforce_url": "https://54below.my.salesforce-sites.com",
+      "active": true
+    },
+    "here_arts": {
+      "name": "HERE Arts Center",
+      "url": "https://here.org",
+      "platform": "wordpress_getcuebox",
+      "cuebox_org_id": "CCTQ0T6B",
+      "cuebox_url": "https://here.app.getcuebox.com/o/CCTQ0T6B/shows",
+      "active": true
+    },
+    "the_tank": {
+      "name": "The Tank",
+      "url": "https://thetanknyc.org",
+      "platform": "squarespace",
+      "active": true
+    },
+    "rattlestick": {
+      "name": "Rattlestick Playwrights Theater",
+      "url": "https://www.rattlestick.org",
+      "platform": "squarespace",
+      "active": true
+    },
+    "ensemble_studio": {
+      "name": "Ensemble Studio Theatre",
+      "url": "https://ensemblestudiotheatre.org",
+      "platform": "squarespace_salesforce",
+      "salesforce_url": "https://ensemblestudiotheatre.my.salesforce-sites.com/ticket/#/events/calendar",
+      "active": true
+    },
+    "keen_company": {
+      "name": "Keen Company",
+      "url": "https://www.keencompany.org",
+      "platform": "squarespace",
+      "active": true
+    },
+    "apollo_theater": {
+      "name": "Apollo Theater",
+      "url": "https://www.apollotheater.org",
+      "platform": "webflow",
+      "active": true
+    },
+    "second_stage": {
+      "name": "Second Stage Theatre",
+      "url": "https://2st.com",
+      "platform": "joomla",
+      "cart_url": "https://cart.2st.com",
+      "active": true
+    },
+    "roundabout": {
+      "name": "Roundabout Theatre Company",
+      "url": "https://www.roundabouttheatre.org",
+      "platform": "custom",
+      "ticketing_url": "https://tickets.roundabouttheatre.org",
+      "active": true
+    }
+  }
+}
