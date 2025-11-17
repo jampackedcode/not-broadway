@@ -105,15 +105,24 @@ All scrapers normalize data to this structure:
 
 ### Installation
 
-1. **Install Python dependencies:**
+1. **Install uv (if not already installed):**
 ```bash
-cd scraper
-pip install -r requirements.txt
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-2. **Install Playwright browsers (for OvationTix scraper only):**
+2. **Install Python dependencies:**
 ```bash
-python -m playwright install chromium
+cd scraper
+uv sync  # Creates venv and installs all dependencies automatically
+```
+
+3. **Install Playwright browsers (for OvationTix scraper only):**
+```bash
+uv run playwright install chromium
 ```
 
 ### Running Existing Scrapers
@@ -123,14 +132,14 @@ We have 3 working scrapers ready to use:
 #### 1. WordPress + Spektrix (NYTW)
 ```bash
 cd scraper
-python platforms/wordpress_spektrix.py
+uv run python platforms/wordpress_spektrix.py
 ```
 **Expected output:** ~557 events from New York Theatre Workshop
 
 #### 2. Squarespace (The Tank)
 ```bash
 cd scraper
-python platforms/squarespace.py
+uv run python platforms/squarespace.py
 ```
 **Expected output:** ~88 events from The Tank
 

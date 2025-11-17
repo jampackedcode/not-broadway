@@ -5,19 +5,53 @@ Get started scraping theater shows in 5 minutes!
 ## Prerequisites
 
 - Python 3.11+
-- pip (Python package manager)
+- [uv](https://github.com/astral-sh/uv) - Fast Python package installer
 
 ## Installation
+
+### Install uv (if not already installed)
+
+**macOS/Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Windows:**
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+### Install project dependencies
 
 ```bash
 # Navigate to scraper directory
 cd scraper
 
-# Install dependencies
-pip install -r requirements.txt
+# Create virtual environment and install dependencies (uv handles this automatically)
+uv sync
 
-# (Optional) Install Playwright for browser automation
-python -m playwright install chromium
+# Activate the virtual environment
+source .venv/bin/activate  # On macOS/Linux
+# or
+.venv\Scripts\activate     # On Windows
+
+# (Optional) Install Playwright browsers for browser automation
+uv run playwright install chromium
+```
+
+**Why uv?** It's 10-100x faster than pip, has better dependency resolution, and manages virtual environments automatically!
+
+### Quick Commands with Makefile
+
+We've included a Makefile for convenience:
+
+```bash
+make help          # Show all available commands
+make sync          # Install dependencies (same as 'uv sync')
+make run-squarespace    # Run Squarespace scraper
+make run-wordpress      # Run WordPress scraper
+make lint          # Lint code with ruff
+make format        # Format code
 ```
 
 ## Run Your First Scraper
@@ -27,6 +61,10 @@ python -m playwright install chromium
 Scrape The Tank's calendar (88 shows):
 
 ```bash
+# Using uv run (no need to activate venv)
+uv run python platforms/squarespace.py
+
+# Or if venv is activated
 python platforms/squarespace.py
 ```
 
@@ -48,7 +86,7 @@ Shows found: 88
 Scrape New York Theatre Workshop (557 events):
 
 ```bash
-python platforms/wordpress_spektrix.py
+uv run python platforms/wordpress_spektrix.py
 ```
 
 **What you'll see:**
