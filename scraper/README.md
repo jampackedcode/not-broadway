@@ -101,18 +101,64 @@ All scrapers normalize data to this structure:
 }
 ```
 
+## Quick Start
+
+### Installation
+
+1. **Install Python dependencies:**
+```bash
+cd scraper
+pip install -r requirements.txt
+```
+
+2. **Install Playwright browsers (for OvationTix scraper only):**
+```bash
+python -m playwright install chromium
+```
+
+### Running Existing Scrapers
+
+We have 3 working scrapers ready to use:
+
+#### 1. WordPress + Spektrix (NYTW)
+```bash
+cd scraper
+python platforms/wordpress_spektrix.py
+```
+**Expected output:** ~557 events from New York Theatre Workshop
+
+#### 2. Squarespace (The Tank)
+```bash
+cd scraper
+python platforms/squarespace.py
+```
+**Expected output:** ~88 events from The Tank
+
+#### 3. OvationTix (requires browser automation)
+```bash
+cd scraper
+python platforms/ovationtix.py
+```
+**Note:** Requires network access for Playwright
+
+### Testing Individual Theaters
+
+Each scraper can be used as a standalone script or imported as a library.
+
+---
+
 ## Usage
 
 ### Basic Usage
 
 ```python
-from scraper.platforms.ovationtix import OvationTixScraper
+from platforms.squarespace import SquarespaceScraper
 
 # Create scraper instance
-scraper = OvationTixScraper(
-    theater_name="The Flea Theater",
-    base_url="https://web.ovationtix.com/trs/store/14",
-    store_id="14"
+scraper = SquarespaceScraper(
+    theater_name="The Tank",
+    base_url="https://thetanknyc.org",
+    calendar_path="/calendar-1"
 )
 
 # Run scraper
@@ -123,6 +169,8 @@ if result.success:
     print(f"Found {len(result.shows)} shows")
     for show in result.shows:
         print(f"- {show.show_title}")
+        if show.dates:
+            print(f"  Date: {show.dates.start}")
 else:
     print(f"Error: {result.error}")
 ```
