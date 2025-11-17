@@ -37,6 +37,8 @@ async function main() {
         type: 'non-profit' as const,
         website: 'https://publictheater.org',
         seatingCapacity: 299,
+        latitude: 40.7282,
+        longitude: -73.9942,
       },
       {
         id: generateId('Soho Playhouse|15 Vandam St'),
@@ -46,6 +48,8 @@ async function main() {
         type: 'off-broadway' as const,
         website: 'https://sohoplayhouse.com',
         seatingCapacity: 178,
+        latitude: 40.7266,
+        longitude: -74.0034,
       },
       {
         id: generateId('The Brick Theater|579 Metropolitan Ave'),
@@ -55,6 +59,8 @@ async function main() {
         type: 'off-off-broadway' as const,
         website: 'https://bricktheater.com',
         seatingCapacity: 99,
+        latitude: 40.7148,
+        longitude: -73.9501,
       },
       {
         id: generateId('Signature Theatre|480 W 42nd St'),
@@ -64,6 +70,8 @@ async function main() {
         type: 'non-profit' as const,
         website: 'https://signaturetheatre.org',
         seatingCapacity: 294,
+        latitude: 40.7590,
+        longitude: -73.9897,
       },
       {
         id: generateId('Cherry Lane Theatre|38 Commerce St'),
@@ -73,6 +81,8 @@ async function main() {
         type: 'off-broadway' as const,
         website: 'https://cherrylane.org',
         seatingCapacity: 179,
+        latitude: 40.7332,
+        longitude: -74.0050,
       },
     ];
 

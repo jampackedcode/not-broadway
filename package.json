@@ -15,7 +15,9 @@
     "discover-theaters": "ts-node --project tsconfig.scripts.json scripts/discover-theaters.ts",
     "scrape-shows": "ts-node --project tsconfig.scripts.json scripts/scrape-shows.ts",
     "publish": "ts-node --project tsconfig.scripts.json scripts/publish.ts",
-    "dev:generate": "ts-node --project tsconfig.scripts.json scripts/dev-generate.ts"
+    "dev:generate": "ts-node --project tsconfig.scripts.json scripts/dev-generate.ts",
+    "migrate:coordinates": "ts-node --project tsconfig.scripts.json scripts/migrate-add-coordinates.ts",
+    "geocode-theaters": "ts-node --project tsconfig.scripts.json scripts/geocode-theaters.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.1",

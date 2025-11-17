@@ -40,8 +40,8 @@ export class TheaterQueries {
       this.db.run(
         `UPDATE theaters SET
           name = ?, address = ?, neighborhood = ?, type = ?,
-          website = ?, seating_capacity = ?, source = ?,
-          updated_at = ?, last_scraped_at = ?
+          website = ?, seating_capacity = ?, latitude = ?, longitude = ?,
+          source = ?, updated_at = ?, last_scraped_at = ?
         WHERE id = ?`,
         [
           theater.name,
@@ -50,6 +50,8 @@ export class TheaterQueries {
           theater.type,
           theater.website || null,
           theater.seatingCapacity || null,
+          theater.latitude || null,
+          theater.longitude || null,
           source,
           now,
           now,
@@ -60,8 +62,9 @@ export class TheaterQueries {
       this.db.run(
         `INSERT INTO theaters (
           id, name, address, neighborhood, type, website,
-          seating_capacity, source, is_active, created_at, updated_at, last_scraped_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+          seating_capacity, latitude, longitude, source, is_active,
+          created_at, updated_at, last_scraped_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
         [
           theater.id,
           theater.name,
@@ -70,6 +73,8 @@ export class TheaterQueries {
           theater.type,
           theater.website || null,
           theater.seatingCapacity || null,
+          theater.latitude || null,
+          theater.longitude || null,
           source,
           now,
           now,
@@ -93,6 +98,63 @@ export class TheaterQueries {
    */
   markInactive(id: string): void {
     this.db.run('UPDATE theaters SET is_active = 0 WHERE id = ?', [id]);
+  }
+
+  /**
+   * Get theaters without coordinates (for geocoding)
+   */
+  getTheatersNeedingGeocoding(): TheaterRecord[] {
+    return this.db.query<TheaterRecord>(
+      'SELECT * FROM theaters WHERE (latitude IS NULL OR longitude IS NULL) AND is_active = 1 ORDER BY name'
+    );
+  }
+
+  /**
+   * Get theaters with coordinates
+   */
+  getTheatersWithCoordinates(): TheaterRecord[] {
+    return this.db.query<TheaterRecord>(
+      'SELECT * FROM theaters WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND is_active = 1 ORDER BY name'
+    );
+  }
+
+  /**
+   * Update theater coordinates
+   */
+  updateCoordinates(
+    id: string,
+    latitude: number,
+    longitude: number,
+    geocodeSource: string
+  ): void {
+    const now = new Date().toISOString();
+    this.db.run(
+      `UPDATE theaters SET
+        latitude = ?, longitude = ?, geocoded_at = ?, geocode_source = ?, updated_at = ?
+      WHERE id = ?`,
+      [latitude, longitude, now, geocodeSource, now, id]
+    );
+  }
+
+  /**
+   * Get theaters within bounding box (for map views)
+   */
+  getTheatersWithinBounds(
+    north: number,
+    south: number,
+    east: number,
+    west: number
+  ): TheaterRecord[] {
+    return this.db.query<TheaterRecord>(
+      `SELECT * FROM theaters
+       WHERE is_active = 1
+         AND latitude IS NOT NULL
+         AND longitude IS NOT NULL
+         AND latitude BETWEEN ? AND ?
+         AND longitude BETWEEN ? AND ?
+       ORDER BY name`,
+      [south, north, west, east]
+    );
   }
 }
 
