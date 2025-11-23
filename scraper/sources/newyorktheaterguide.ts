@@ -36,15 +36,11 @@ export class NewYorkTheatreGuideScraper extends BaseScraper {
                 throw new Error(`Failed to fetch ${this.OVERVIEW_URL}: ${response.statusText}`);
             }
 
-            const html = await response.text();
+
+            // Use fetchWithCache
+            const html = await this.fetchWithCache(this.OVERVIEW_URL);
             const $ = cheerio.load(html);
             const theaters: Theater[] = [];
-
-            // Find the section "Which theatres are Broadway theatres?"
-            // Based on inspection: a.t-link-color
-            // We need to be careful to only get the theaters, so let's look for the specific header if possible,
-            // or just grab all t-link-color links that look like theater links if they are grouped.
-            // The inspection showed they are in a paragraph or list after the header.
 
             // Helper to extract theaters from a section
             const extractTheaters = (headerText: string, type: 'broadway' | 'off-broadway') => {
@@ -79,7 +75,7 @@ export class NewYorkTheatreGuideScraper extends BaseScraper {
                                         theaters.push({
                                             id,
                                             name,
-                                            address: 'New York, NY', // Placeholder
+                                            address: 'New York, NY', // Placeholder, will be updated
                                             neighborhood: '', // Placeholder
                                             type,
                                             website: url,
@@ -102,6 +98,80 @@ export class NewYorkTheatreGuideScraper extends BaseScraper {
 
             extractTheaters('Which theatres are Broadway theatres?', 'broadway');
             extractTheaters('Which theatres are Off-Broadway theatres?', 'off-broadway');
+
+            // Now visit each theater page to get metadata
+            console.log(`Enriching metadata for ${theaters.length} theaters...`);
+            for (const theater of theaters) {
+                if (theater.website) {
+                    try {
+                        const theaterHtml = await this.fetchWithCache(theater.website);
+                        const $t = cheerio.load(theaterHtml);
+
+                        // Try to extract from __NEXT_DATA__
+                        let metadataFound = false;
+                        try {
+                            const nextDataScript = $t('#__NEXT_DATA__');
+                            if (nextDataScript.length > 0) {
+                                const json = JSON.parse(nextDataScript.html() || '{}');
+                                const venue = json?.props?.pageProps?.venue;
+
+                                if (venue) {
+                                    if (venue.streetAddress1) {
+                                        theater.address = `${venue.streetAddress1}, ${venue.city}, ${venue.state} ${venue.postalCode}`;
+                                    }
+
+                                    if (venue.capacity) {
+                                        theater.seatingCapacity = parseInt(venue.capacity, 10);
+                                    }
+
+                                    metadataFound = true;
+                                }
+                            }
+                        } catch (e) {
+                            console.warn(`Failed to parse __NEXT_DATA__ for ${theater.name}: ${e}`);
+                        }
+
+                        if (!metadataFound) {
+                            // Fallback to regex
+
+                            // Address - Use data-test-id if available
+                            const addressElement = $t('[data-test-id="venue-address"]');
+                            if (addressElement.length > 0) {
+                                theater.address = addressElement.text().trim();
+                            } else {
+                                const bodyText = $t('body').text();
+                                const addressMatch = bodyText.match(/Located at ([^,.]+)/);
+                                if (addressMatch && addressMatch[1]) {
+                                    theater.address = `${addressMatch[1].trim()}, New York, NY`;
+                                }
+                            }
+
+                            // Capacity
+                            const bodyText = $t('body').text();
+                            const capacityMatch = bodyText.match(/(\d{1,3}(?:,\d{3})*)\s+capacity/i);
+                            if (capacityMatch && capacityMatch[1]) {
+                                theater.seatingCapacity = parseInt(capacityMatch[1].replace(/,/g, ''), 10);
+                            }
+                        }
+
+                        // Neighborhood (simple inference)
+                        if (theater.address) {
+                            const addr = theater.address.toLowerCase();
+                            if (addr.includes('42nd') || addr.includes('43rd') || addr.includes('44th') || addr.includes('45th') || addr.includes('46th') || addr.includes('47th') || addr.includes('48th') || addr.includes('49th') || addr.includes('50th') || addr.includes('51st') || addr.includes('52nd') || addr.includes('53rd') || addr.includes('54th')) {
+                                theater.neighborhood = 'Theater District';
+                            } else if (addr.includes('lincoln center') || addr.includes('65th')) {
+                                theater.neighborhood = 'Lincoln Square';
+                            } else if (addr.includes('broadway') && !addr.includes('theater district')) {
+                                // Generic fallback
+                                theater.neighborhood = 'Midtown';
+                            }
+                        }
+
+                    } catch (error) {
+                        console.warn(`Failed to enrich metadata for ${theater.name}: ${error}`);
+                    }
+                }
+            }
 
             return {
                 success: true,
@@ -137,18 +207,10 @@ export class NewYorkTheatreGuideScraper extends BaseScraper {
 
         try {
             await this.applyRateLimit();
-            const response = await fetch(theaterUrl);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch ${theaterUrl}: ${response.statusText}`);
-            }
-
-            const html = await response.text();
+            // Use fetchWithCache
+            const html = await this.fetchWithCache(theaterUrl);
             const $ = cheerio.load(html);
             const shows: Show[] = [];
-
-            // Based on inspection: a[href^='/show/']
-            // We want the main show link.
-            // There might be multiple links to the same show.
 
             const showLinks = $('a[href^="/show/"]');
             const processedUrls = new Set<string>();
@@ -160,25 +222,14 @@ export class NewYorkTheatreGuideScraper extends BaseScraper {
                 if (href && !processedUrls.has(href)) {
                     processedUrls.add(href);
 
-                    // Try to find title
                     let title = link.find('p').first().text().trim();
                     if (!title) {
-                        // Try looking for title in a nested div or just the text if it's a direct link
-                        // The inspection showed: a[href^='/show/'] > div > div > a > p
-                        // But also a.jss965
-
-                        // Let's look for the specific structure or fallback to text
                         title = link.text().trim();
                     }
 
-                    // Clean up title (remove "Tickets" etc if present)
                     if (title) {
                         const url = href.startsWith('http') ? href : `${this.BASE_URL}${href}`;
                         const showId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-                        // Extract dates if available (very basic parsing)
-                        // The inspection showed dates might be in a sibling div
-                        // For now, we'll use current date as start and a future date as end or placeholders
 
                         shows.push({
                             id: showId,

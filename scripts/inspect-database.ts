@@ -33,7 +33,9 @@ async function main() {
       const name = theater.name.padEnd(24).substring(0, 24);
       const type = theater.type.padEnd(16).substring(0, 16);
       const neighborhood = (theater.neighborhood || 'N/A').padEnd(17).substring(0, 17);
-      const capacity = (theater.seatingCapacity || 'N/A').toString().padEnd(8);
+      // Cast to any to access snake_case properties from DB record
+      const record = theater as any;
+      const capacity = (record.seating_capacity || 'N/A').toString().padEnd(8);
       console.log(`${id} | ${name} | ${type} | ${neighborhood} | ${capacity}`);
     }
 

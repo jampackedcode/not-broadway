@@ -30,11 +30,21 @@ export interface IScraper {
   ): Promise<ScraperResult<ShowScraperResult>>;
 }
 
+import { PageCache } from '../utils/cache';
+
 /**
  * Abstract base class with common scraper functionality
  */
 export abstract class BaseScraper implements IScraper {
   abstract readonly config: ScraperConfig;
+  protected cache: PageCache;
+
+  constructor() {
+    this.cache = new PageCache();
+    // Initialize cache asynchronously - in a real app we might want to await this
+    // or handle it differently, but for now this is fine as file ops are lazy/handled
+    this.cache.init().catch(console.error);
+  }
 
   /**
    * Sleep utility for rate limiting
@@ -50,6 +60,30 @@ export abstract class BaseScraper implements IScraper {
     if (this.config.rateLimit?.delayBetweenRequests) {
       await this.sleep(this.config.rateLimit.delayBetweenRequests);
     }
+  }
+
+  /**
+   * Fetch URL with caching
+   */
+  protected async fetchWithCache(url: string): Promise<string> {
+    const cached = await this.cache.get(url);
+    if (cached) {
+      console.log(`[Cache] Hit: ${url}`);
+      return cached;
+    }
+
+    console.log(`[Cache] Miss: ${url}`);
+    await this.applyRateLimit();
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+    }
+
+    const html = await response.text();
+    await this.cache.set(url, html);
+
+    return html;
   }
 
   /**
