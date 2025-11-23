@@ -54,3 +54,7 @@ venv/
 env/
 
 .cache/
+*.map
+*.js
+*d.js
+*d.ts

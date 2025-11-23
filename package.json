@@ -18,10 +18,7 @@
     "dev:generate": "ts-node --project tsconfig.scripts.json scripts/dev-generate.ts",
     "migrate:coordinates": "ts-node --project tsconfig.scripts.json scripts/migrate-add-coordinates.ts",
     "geocode-theaters": "ts-node --project tsconfig.scripts.json scripts/geocode-theaters.ts",
-    "scraper:build": "tsc --project scraper/tsconfig.json",
-    "scraper:squarespace": "ts-node --project scraper/tsconfig.json scraper/src/platforms/squarespace.ts",
-    "scraper:wordpress": "ts-node --project scraper/tsconfig.json scraper/src/platforms/wordpress-spektrix.ts",
-    "scraper:ovationtix": "ts-node --project scraper/tsconfig.json scraper/src/platforms/ovationtix.ts"
+    "scraper:build": "tsc --project scraper/tsconfig.json"
   },
   "dependencies": {
     "axios": "^1.13.2",

@@ -2,9 +2,10 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020"],
+    "lib": [
+      "ES2020"
+    ],
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -22,6 +23,19 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "include": [
+    "sources/**/*",
+    "platforms/**/*",
+    "db/**/*",
+    "jobs/**/*",
+    "export/**/*",
+    "utils/**/*",
+    "config/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
 }

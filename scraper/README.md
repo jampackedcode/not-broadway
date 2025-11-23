@@ -3,25 +3,25 @@
 Automated web scrapers for collecting show information from 127 NYC theater websites.
 
 **Language:** TypeScript (Node.js)
-**Status:** ✅ Production Ready
+**Status:** In Progress
 
 ---
 
 ## Quick Start
 
-Run scrapers from the **root directory**:
+Run scraper jobs from the **root directory**:
 
 ```bash
-# Squarespace scraper (The Tank - 88 events)
-npm run scraper:squarespace
+# Discover theaters (weekly job)
+npm run discover-theaters
 
-# WordPress + Spektrix scraper (NYTW - 557 events)
-npm run scraper:wordpress
+# Scrape shows from all theaters (daily job)
+npm run scrape-shows
 
-# OvationTix scraper (The Flea Theater)
-npm run scraper:ovationtix
+# Generate public data blob
+npm run dev:generate
 
-# Build all scrapers
+# Build TypeScript scraper code
 npm run scraper:build
 ```
 
@@ -31,41 +31,61 @@ npm run scraper:build
 
 ```
 scraper/
-├── src/                           # TypeScript source code
-│   ├── base/                      # Core infrastructure
-│   │   ├── base-scraper.ts       # Abstract base class
-│   │   └── data-schema.ts        # Zod schemas & types
-│   │
-│   ├── platforms/                 # Platform-specific scrapers
-│   │   ├── squarespace.ts        # Squarespace sites (~25-30 theaters)
-│   │   ├── wordpress-spektrix.ts # WordPress + Spektrix (~15-20 theaters)
-│   │   └── ovationtix.ts         # OvationTix platform (~10-15 theaters)
-│   │
-│   ├── utils/                     # Shared utilities
-│   │   └── parsing.ts            # Date/price/text parsing
-│   │
-│   └── index.ts                   # Central export file
+├── sources/                       # Source website scrapers
+│   ├── base.ts                    # Base scraper interface
+│   ├── index.ts                   # Scraper registry
+│   ├── newyorktheaterguide.ts     # NY Theatre Guide scraper
+│   ├── newyorktheater.ts          # NY Theater scraper
+│   ├── freshgroundpepper.ts       # Fresh Ground Pepper scraper
+│   └── artnewyork.ts              # ART New York scraper
+│
+├── platforms/                     # Platform-specific scrapers
+│   ├── base.ts                    # Base platform scraper
+│   ├── factory.ts                 # Scraper factory
+│   ├── squarespace.ts             # Squarespace sites
+│   ├── wordpress.ts               # WordPress + various ticketing
+│   └── ovationtix.ts              # OvationTix platform
+│
+├── db/                            # Database layer
+│   ├── schema.ts                  # SQLite schema definitions
+│   ├── client.ts                  # Database client
+│   └── queries.ts                 # Query operations
+│
+├── jobs/                          # Job orchestration
+│   ├── discover-theaters.ts       # Theater discovery job
+│   └── scrape-shows.ts            # Show scraping job
+│
+├── export/                        # Data export
+│   ├── generate-blob.ts           # Generate shows.json
+│   └── upload-s3.ts               # Cloud upload
+│
+├── utils/                         # Utilities
+│   └── cache.ts                   # Caching utilities
 │
 ├── config/                        # Configuration
 │   └── theater_registry.json     # Theater metadata
 │
-├── tsconfig.json                  # TypeScript config
-├── TYPESCRIPT_GUIDE.md            # 📘 Complete usage guide
-├── TYPESCRIPT_PORT_SUMMARY.md     # Migration notes
-└── README.md                      # This file
+└── tsconfig.json                  # TypeScript config
 ```
 
 ---
 
 ## Platform Coverage
 
-| Platform | Coverage | Example Theater | Events | Status |
-|----------|----------|-----------------|--------|--------|
-| **Squarespace** | 25-30 theaters | The Tank | 88 | ✅ |
-| **WordPress + Spektrix** | 15-20 theaters | NYTW | 557 | ✅ |
-| **OvationTix** | 10-15 theaters | The Flea Theater | TBD | ✅ |
+The scraper implementation includes two complementary approaches:
 
-**Total Coverage:** ~50-65 of 127 theaters (39-51%)
+### Source-Based Scrapers (`sources/`)
+Scrape theater aggregator websites to discover theaters and shows:
+- **New York Theatre Guide** - Theater and show listings
+- **New York Theater** - NYC theater directory
+- **Fresh Ground Pepper NYC** - Off-Broadway coverage
+- **ART New York** - Independent theater community
+
+### Platform-Based Scrapers (`platforms/`)
+Scrape theaters by their website platform:
+- **Squarespace** - Sites built on Squarespace
+- **WordPress** - WordPress sites with various ticketing integrations
+- **OvationTix** - OvationTix ticketing platform
 
 ---
 
@@ -111,32 +131,12 @@ interface Show {
 ## Features
 
 ✅ **Retry Logic** - Exponential backoff for network failures
+✅ **Cache Websites for Reruns** - Cache webpages locally to avoid repeated requests
 ✅ **Rate Limiting** - 1 second between requests
 ✅ **Browser Automation** - Playwright for JavaScript-rendered content
 ✅ **Type Safety** - Strict TypeScript + Zod validation
 ✅ **Custom JS Parser** - Extracts 275KB+ JavaScript arrays from HTML
 ✅ **Error Handling** - Graceful degradation with detailed logging
-
----
-
-## Usage as Library
-
-```typescript
-import { SquarespaceScraper } from './scraper/src/platforms/squarespace';
-
-const scraper = new SquarespaceScraper({
-  theaterName: 'The Tank',
-  baseUrl: 'https://thetanknyc.org',
-  calendarPath: '/calendar-1',
-});
-
-const result = await scraper.run();
-
-console.log(`Found ${result.shows.length} shows`);
-result.shows.forEach(show => {
-  console.log(`${show.showTitle} - ${show.dates?.start || 'TBD'}`);
-});
-```
 
 ---
 
@@ -147,33 +147,27 @@ result.shows.forEach(show => {
 
 ---
 
-## Next Steps
-
-- Build remaining WordPress templates (GetCuebox, Salesforce, Basic)
-- Create theater configuration registry (127 theaters)
-- Build scraper orchestrator/runner
-- Add monitoring and health checks
-- Deploy as scheduled jobs
-
-See **[NEXT_STEPS.md](./NEXT_STEPS.md)** for detailed roadmap.
-
----
 
 ## Development
 
 ### Adding a New Scraper
 
-1. Create file in `src/platforms/`
-2. Extend `BaseScraper` class
-3. Implement `scrape()` method returning `Show[]`
-4. Add npm script to root `package.json`
+**For source-based scrapers** (`sources/`):
+1. Create file in `scraper/sources/`
+2. Implement `IScraper` interface from `base.ts`
+3. Add to scraper registry in `sources/index.ts`
+
+**For platform-based scrapers** (`platforms/`):
+1. Create file in `scraper/platforms/`
+2. Extend base scraper class
+3. Add factory method in `factory.ts`
 
 ### Testing
 
 ```bash
-npm run scraper:squarespace  # Test Squarespace scraper
-npm run scraper:wordpress    # Test WordPress scraper
-npm run scraper:ovationtix   # Test OvationTix scraper
+# Test scraper jobs
+npm run discover-theaters   # Test theater discovery
+npm run scrape-shows        # Test show scraping
 ```
 
 ### Building
