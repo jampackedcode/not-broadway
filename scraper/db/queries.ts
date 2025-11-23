@@ -7,7 +7,7 @@ import { Theater, Show } from '../../types';
  */
 
 export class TheaterQueries {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseClient) { }
 
   /**
    * Find theater by ID
@@ -94,10 +94,38 @@ export class TheaterQueries {
   markInactive(id: string): void {
     this.db.run('UPDATE theaters SET is_active = 0 WHERE id = ?', [id]);
   }
+
+  /**
+   * Create a new theater
+   */
+  create(theater: Partial<Theater> & { name: string }): void {
+    const now = new Date().toISOString();
+    const id = theater.id || theater.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    this.db.run(
+      `INSERT INTO theaters (
+        id, name, address, neighborhood, type, website,
+        seating_capacity, source, is_active, created_at, updated_at, last_scraped_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+      [
+        id,
+        theater.name,
+        theater.address || '',
+        theater.neighborhood || 'Unknown',
+        theater.type || 'non-profit',
+        theater.website || null,
+        theater.seatingCapacity || null,
+        'registry',
+        now,
+        now,
+        now,
+      ]
+    );
+  }
 }
 
 export class ShowQueries {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseClient) { }
 
   /**
    * Find show by ID
@@ -222,7 +250,7 @@ export class ShowQueries {
 }
 
 export class ScraperRunQueries {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseClient) { }
 
   /**
    * Create a new scraper run record

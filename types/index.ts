@@ -1,4 +1,4 @@
-export type TheaterType = 'off-broadway' | 'off-off-broadway' | 'non-profit';
+export type TheaterType = 'broadway' | 'off-broadway' | 'off-off-broadway' | 'non-profit';
 
 export type ShowGenre =
   | 'drama'
@@ -8,6 +8,16 @@ export type ShowGenre =
   | 'solo-show'
   | 'dance'
   | 'other';
+
+export enum ShowStatus {
+  UPCOMING = 'upcoming',
+  RUNNING = 'running',
+  CANCELED = 'canceled',
+  SOLD_OUT = 'sold_out',
+  POSTPONED = 'postponed',
+  PAST = 'past',
+  CLOSED = 'closed'
+}
 
 export interface Theater {
   id: string;
@@ -35,6 +45,8 @@ export interface Show {
   };
   website?: string;
   imageUrl?: string;
+  status: ShowStatus;
+  venue?: string;
 }
 
 export interface ShowWithTheater extends Show {

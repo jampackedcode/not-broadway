@@ -1,7 +1,9 @@
 import { getDatabase } from '../db/client';
 import { TheaterQueries, ShowQueries, ScraperRunQueries } from '../db/queries';
-import { getEnabledScrapers, getScraperByName } from '../sources';
+import { PlatformScraperFactory, TheaterConfig } from '../platforms/factory';
 import { JobResult } from '../../types/scraper';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Job: Scrape Shows
@@ -9,7 +11,7 @@ import { JobResult } from '../../types/scraper';
  * This job runs daily to scrape show information for all active theaters.
  * It updates the database with current show listings and marks expired shows as inactive.
  *
- * @param scraperName - Optional scraper name to run only that scraper
+ * @param scraperName - Optional scraper name (theater name) to run only that scraper
  */
 
 export async function scrapeShows(scraperName?: string): Promise<JobResult> {
@@ -37,88 +39,84 @@ export async function scrapeShows(scraperName?: string): Promise<JobResult> {
     const expiredCount = showQueries.markExpiredInactive();
     console.log(`[${jobName}] Marked ${expiredCount} expired shows as inactive`);
 
-    // Get all active theaters
-    const theaters = theaterQueries.getAllActive();
-    console.log(`[${jobName}] Found ${theaters.length} active theaters`);
+    // Load theater registry
+    const registryPath = path.join(process.cwd(), 'scraper', 'config', 'theater_registry.json');
+    const registry = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
+    const theaterConfigs: Record<string, TheaterConfig> = registry.theaters;
 
-    // Get scrapers to use
-    let scrapers;
+    // Filter theaters if scraperName is provided
+    let targetTheaters = Object.entries(theaterConfigs);
     if (scraperName) {
-      const scraper = getScraperByName(scraperName);
-      if (!scraper) {
-        throw new Error(`Scraper not found: ${scraperName}`);
-      }
-      if (!scraper.config.enabled) {
-        console.warn(`[${jobName}] Warning: ${scraperName} is disabled but will run anyway`);
-      }
-      scrapers = [scraper];
-      console.log(`[${jobName}] Running single scraper: ${scraper.config.name}`);
-    } else {
-      scrapers = getEnabledScrapers();
-      console.log(`[${jobName}] Found ${scrapers.length} enabled scrapers`);
+      targetTheaters = targetTheaters.filter(([key, config]) =>
+        key === scraperName || config.name.toLowerCase().includes(scraperName.toLowerCase())
+      );
     }
 
-    // For each theater, try to scrape shows using available scrapers
-    for (const theater of theaters) {
-      console.log(`[${jobName}] Processing theater: ${theater.name}`);
+    console.log(`[${jobName}] Found ${targetTheaters.length} theaters to process`);
 
-      // Try each scraper until one succeeds
-      let scraperSuccess = false;
-
-      for (const scraper of scrapers) {
-        try {
-          const result = await scraper.scrapeShows(
-            theater.id,
-            theater.website
-          );
-
-          if (result.success && result.data) {
-            const { shows } = result.data;
-            console.log(
-              `[${jobName}] ${scraper.config.name}: Found ${shows.length} shows for ${theater.name}`
-            );
-
-            // Process each show
-            for (const show of shows) {
-              try {
-                const existing = showQueries.findById(show.id);
-
-                // Upsert show
-                showQueries.upsert(
-                  show,
-                  scraper.config.name,
-                  theater.website
-                );
-
-                if (existing) {
-                  itemsUpdated++;
-                } else {
-                  itemsAdded++;
-                }
-
-                itemsProcessed++;
-              } catch (error) {
-                const message = `Error processing show ${show.title}: ${error}`;
-                console.error(`[${jobName}] ${message}`);
-                errors.push(message);
-              }
-            }
-
-            scraperSuccess = true;
-            break; // Successfully scraped with this scraper, move to next theater
-          }
-        } catch (error) {
-          // Log but continue to next scraper
-          console.warn(
-            `[${jobName}] ${scraper.config.name} failed for ${theater.name}: ${error}`
-          );
-        }
+    for (const [key, config] of targetTheaters) {
+      if (!config.active) {
+        console.log(`[${jobName}] Skipping inactive theater: ${config.name}`);
+        continue;
       }
 
-      if (!scraperSuccess) {
-        const message = `Failed to scrape shows for theater: ${theater.name}`;
-        console.warn(`[${jobName}] ${message}`);
-        // Don't add to errors array as this is not critical
+      console.log(`[${jobName}] Processing theater: ${config.name} (${config.platform})`);
+
+      const scraper = PlatformScraperFactory.createScraper(config);
+      if (!scraper) {
+        console.warn(`[${jobName}] No scraper available for platform: ${config.platform}`);
+        continue;
+      }
+
+      try {
+        // Ensure theater exists in DB
+        let theater = theaterQueries.findByName(config.name);
+        if (!theater) {
+          // Create theater if not exists
+          // Note: In a real app, we might want to be more careful about creating theaters on the fly
+          // But for migration, we want to ensure all registry theaters are in the DB
+          theaterQueries.create({
+            name: config.name,
+            website: config.url,
+            neighborhood: 'Unknown', // Registry doesn't have neighborhood yet
+            type: 'non-profit' // Default
+          });
+          theater = theaterQueries.findByName(config.name);
+        }
+
+        if (!theater) {
+          throw new Error(`Failed to find or create theater: ${config.name}`);
+        }
+
+        const result = await scraper.scrapeShows(theater.id, config.url);
+
+        if (result.success && result.data) {
+          const { shows } = result.data;
+          console.log(`[${jobName}] Found ${shows.length} shows for ${config.name}`);
+
+          for (const show of shows) {
+            try {
+              const existing = showQueries.findById(show.id);
+              showQueries.upsert(show, config.platform, config.url);
+
+              if (existing) itemsUpdated++;
+              else itemsAdded++;
+
+              itemsProcessed++;
+            } catch (error) {
+              const message = `Error processing show ${show.title}: ${error}`;
+              console.error(`[${jobName}] ${message}`);
+              errors.push(message);
+            }
+          }
+        } else if (result.error) {
+          console.warn(`[${jobName}] Scraper failed for ${config.name}: ${result.error}`);
+        }
+
+      } catch (error) {
+        const message = `Error scraping theater ${config.name}: ${error}`;
+        console.error(`[${jobName}] ${message}`);
+        errors.push(message);
       }
     }
 

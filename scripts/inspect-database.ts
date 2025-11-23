@@ -95,33 +95,6 @@ async function main() {
       console.log(`  ${type.padEnd(15)}: ${count}`);
     }
 
-    // Date range
-    const startDates = shows.map(s => new Date((s as any).start_date));
-    const endDates = shows.map(s => new Date((s as any).end_date));
-    const earliestStart = new Date(Math.min(...startDates.map(d => d.getTime())));
-    const latestEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
-
-    console.log('\nShow Date Range:');
-    console.log(`  Earliest start: ${earliestStart.toISOString().substring(0, 10)}`);
-    console.log(`  Latest end:     ${latestEnd.toISOString().substring(0, 10)}`);
-
-    // Price range
-    const prices = shows
-      .filter(s => (s as any).ticket_price_min && (s as any).ticket_price_max)
-      .map(s => ({ min: (s as any).ticket_price_min, max: (s as any).ticket_price_max }));
-
-    if (prices.length > 0) {
-      const minPrice = Math.min(...prices.map(p => p.min));
-      const maxPrice = Math.max(...prices.map(p => p.max));
-      const avgMin = Math.round(prices.reduce((sum, p) => sum + p.min, 0) / prices.length);
-      const avgMax = Math.round(prices.reduce((sum, p) => sum + p.max, 0) / prices.length);
-
-      console.log('\nTicket Price Range:');
-      console.log(`  Cheapest:  $${minPrice}`);
-      console.log(`  Most expensive: $${maxPrice}`);
-      console.log(`  Average range: $${avgMin}-$${avgMax}`);
-    }
-
     console.log('\n==================================================');
     console.log('✓ Inspection complete');
     console.log('==================================================');
