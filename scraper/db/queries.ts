@@ -101,6 +101,26 @@ export class TheaterQueries {
   }
 
   /**
+   * Get theaters that are missing latitude or longitude coordinates
+   */
+  getTheatersNeedingGeocoding(): TheaterRecord[] {
+    return this.db.query<TheaterRecord>(
+      'SELECT * FROM theaters WHERE (latitude IS NULL OR longitude IS NULL) AND is_active = 1'
+    );
+  }
+
+  /**
+   * Update latitude and longitude for a theater
+   */
+  updateCoordinates(id: string, latitude: number, longitude: number, source: string): void {
+    const now = new Date().toISOString();
+    this.db.run(
+      `UPDATE theaters SET latitude = ?, longitude = ?, source = ?, updated_at = ?, last_scraped_at = ? WHERE id = ?`,
+      [latitude, longitude, source, now, now, id]
+    );
+  }
+
+  /**
    * Create a new theater
    */
   create(theater: Partial<Theater> & { name: string }): void {
@@ -109,9 +129,9 @@ export class TheaterQueries {
 
     this.db.run(
       `INSERT INTO theaters (
-        id, name, address, neighborhood, type, website,
-        seating_capacity, source, is_active, created_at, updated_at, last_scraped_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+          id, name, address, neighborhood, type, website,
+          seating_capacity, source, is_active, created_at, updated_at, last_scraped_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
       [
         id,
         theater.name,
