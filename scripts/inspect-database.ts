@@ -33,7 +33,9 @@ async function main() {
       const name = theater.name.padEnd(24).substring(0, 24);
       const type = theater.type.padEnd(16).substring(0, 16);
       const neighborhood = (theater.neighborhood || 'N/A').padEnd(17).substring(0, 17);
-      const capacity = (theater.seatingCapacity || 'N/A').toString().padEnd(8);
+      // Cast to any to access snake_case properties from DB record
+      const record = theater as any;
+      const capacity = (record.seating_capacity || 'N/A').toString().padEnd(8);
       console.log(`${id} | ${name} | ${type} | ${neighborhood} | ${capacity}`);
     }
 
@@ -93,33 +95,6 @@ async function main() {
     console.log('\nTheaters by Type:');
     for (const [type, count] of Object.entries(typeStats).sort((a, b) => b[1] - a[1])) {
       console.log(`  ${type.padEnd(15)}: ${count}`);
-    }
-
-    // Date range
-    const startDates = shows.map(s => new Date((s as any).start_date));
-    const endDates = shows.map(s => new Date((s as any).end_date));
-    const earliestStart = new Date(Math.min(...startDates.map(d => d.getTime())));
-    const latestEnd = new Date(Math.max(...endDates.map(d => d.getTime())));
-
-    console.log('\nShow Date Range:');
-    console.log(`  Earliest start: ${earliestStart.toISOString().substring(0, 10)}`);
-    console.log(`  Latest end:     ${latestEnd.toISOString().substring(0, 10)}`);
-
-    // Price range
-    const prices = shows
-      .filter(s => (s as any).ticket_price_min && (s as any).ticket_price_max)
-      .map(s => ({ min: (s as any).ticket_price_min, max: (s as any).ticket_price_max }));
-
-    if (prices.length > 0) {
-      const minPrice = Math.min(...prices.map(p => p.min));
-      const maxPrice = Math.max(...prices.map(p => p.max));
-      const avgMin = Math.round(prices.reduce((sum, p) => sum + p.min, 0) / prices.length);
-      const avgMax = Math.round(prices.reduce((sum, p) => sum + p.max, 0) / prices.length);
-
-      console.log('\nTicket Price Range:');
-      console.log(`  Cheapest:  $${minPrice}`);
-      console.log(`  Most expensive: $${maxPrice}`);
-      console.log(`  Average range: $${avgMin}-$${avgMax}`);
     }
 
     console.log('\n==================================================');

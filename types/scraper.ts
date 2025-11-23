@@ -1,6 +1,7 @@
-import { Theater, Show } from './index';
+import { Theater, Show, ShowStatus } from './index';
 
 // Re-export Theater and Show for use in scrapers
+export { ShowStatus };
 export type { Theater, Show };
 
 /**
@@ -13,6 +14,8 @@ export interface ScraperResult<T> {
   error?: string;
   source: string;
   scrapedAt: Date;
+  log?: string[];
+  warnings?: string[];
 }
 
 export interface TheaterScraperResult {
@@ -54,6 +57,7 @@ export interface ShowRecord extends Show {
 
 export interface ScraperConfig {
   name: string;
+  platformName?: string;
   enabled: boolean;
   rateLimit?: {
     requestsPerMinute: number;

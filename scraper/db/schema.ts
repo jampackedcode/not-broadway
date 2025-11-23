@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS theaters (
   name TEXT NOT NULL,
   address TEXT NOT NULL,
   neighborhood TEXT NOT NULL,
-  type TEXT NOT NULL CHECK(type IN ('off-broadway', 'off-off-broadway', 'non-profit')),
+  type TEXT NOT NULL CHECK(type IN ('broadway', 'off-broadway', 'off-off-broadway', 'non-profit')),
   website TEXT,
   seating_capacity INTEGER,
   latitude REAL,

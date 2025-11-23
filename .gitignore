@@ -52,4 +52,5 @@ dist/
 build/
 venv/
 env/
-.venv/
+
+.cache/

@@ -7,7 +7,7 @@ import { Theater, Show } from '../../types';
  */
 
 export class TheaterQueries {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseClient) { }
 
   /**
    * Find theater by ID
@@ -101,65 +101,36 @@ export class TheaterQueries {
   }
 
   /**
-   * Get theaters without coordinates (for geocoding)
+   * Create a new theater
    */
-  getTheatersNeedingGeocoding(): TheaterRecord[] {
-    return this.db.query<TheaterRecord>(
-      'SELECT * FROM theaters WHERE (latitude IS NULL OR longitude IS NULL) AND is_active = 1 ORDER BY name'
-    );
-  }
-
-  /**
-   * Get theaters with coordinates
-   */
-  getTheatersWithCoordinates(): TheaterRecord[] {
-    return this.db.query<TheaterRecord>(
-      'SELECT * FROM theaters WHERE latitude IS NOT NULL AND longitude IS NOT NULL AND is_active = 1 ORDER BY name'
-    );
-  }
-
-  /**
-   * Update theater coordinates
-   */
-  updateCoordinates(
-    id: string,
-    latitude: number,
-    longitude: number,
-    geocodeSource: string
-  ): void {
+  create(theater: Partial<Theater> & { name: string }): void {
     const now = new Date().toISOString();
-    this.db.run(
-      `UPDATE theaters SET
-        latitude = ?, longitude = ?, geocoded_at = ?, geocode_source = ?, updated_at = ?
-      WHERE id = ?`,
-      [latitude, longitude, now, geocodeSource, now, id]
-    );
-  }
+    const id = theater.id || theater.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-  /**
-   * Get theaters within bounding box (for map views)
-   */
-  getTheatersWithinBounds(
-    north: number,
-    south: number,
-    east: number,
-    west: number
-  ): TheaterRecord[] {
-    return this.db.query<TheaterRecord>(
-      `SELECT * FROM theaters
-       WHERE is_active = 1
-         AND latitude IS NOT NULL
-         AND longitude IS NOT NULL
-         AND latitude BETWEEN ? AND ?
-         AND longitude BETWEEN ? AND ?
-       ORDER BY name`,
-      [south, north, west, east]
+    this.db.run(
+      `INSERT INTO theaters (
+        id, name, address, neighborhood, type, website,
+        seating_capacity, source, is_active, created_at, updated_at, last_scraped_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+      [
+        id,
+        theater.name,
+        theater.address || '',
+        theater.neighborhood || 'Unknown',
+        theater.type || 'non-profit',
+        theater.website || null,
+        theater.seatingCapacity || null,
+        'registry',
+        now,
+        now,
+        now,
+      ]
     );
   }
 }
 
 export class ShowQueries {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseClient) { }
 
   /**
    * Find show by ID
@@ -284,7 +255,7 @@ export class ShowQueries {
 }
 
 export class ScraperRunQueries {
-  constructor(private db: DatabaseClient) {}
+  constructor(private db: DatabaseClient) { }
 
   /**
    * Create a new scraper run record
